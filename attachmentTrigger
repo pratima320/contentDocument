@@ -1,0 +1,32 @@
+trigger PreventDeleteExceptionAttachment on Attachment (before insert, before update, before delete) {
+    Schema.DescribeSObjectResult inv = Inventory_Exception__c.sObjectType.getDescribe();
+    String invKeyPrefix = inv.getKeyPrefix();
+    
+    if(trigger.isInsert){
+        for(Attachment a :trigger.new){
+            if(invKeyPrefix == String.valueOf(a.parentId).left(3) &&
+               [select status__c from Inventory_Exception__c where id = :a.parentId].status__c =='Final'){
+                   a.adderror('This attachment could not be added because this exception record is marked as Final.');
+               }
+        }
+    }
+    
+    if(trigger.isUpdate){
+        for(Attachment a :trigger.new){
+            if(invKeyPrefix == String.valueOf(a.parentId).left(3) &&
+               [select status__c from Inventory_Exception__c where id = :a.parentId].status__c =='Final'){
+                   a.adderror('This attachment could not be modified because this exception record is marked as Final.');
+               }
+        }
+    }
+    
+    if(trigger.isDelete){
+        for(Attachment a :trigger.old){
+            if(invKeyPrefix == String.valueOf(a.parentId).left(3) &&
+               [select status__c from Inventory_Exception__c where id = :a.parentId].status__c =='Final'){
+                   a.adderror('This attachment could not be deleted because this exception record is marked as Final.');
+               }
+        }
+    }
+
+}
