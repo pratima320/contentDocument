@@ -1,0 +1,45 @@
+/***************************************************************************************
+Developer Name                   Modified Date                             Description
+***************************************************************************************
+Pratima Shrivastav              04/06/2018                        prevent deletion of uploaded files once exception status is final
+---------------------------------------------------------------------------------------------------------------------------- */
+
+trigger ContentDocTrigger on ContentDocument (before delete) {
+    
+   
+    
+    //get prefix of Inventory exception record
+    Schema.DescribeSObjectResult inv = Inventory_Exception__c.sObjectType.getDescribe();
+    String invKeyPrefix = inv.getKeyPrefix();
+    
+    List<Id> contentDocId = new List<Id>();
+    Map<Id, Id> contDocLinkedMap = new Map<Id, Id>();
+    if(trigger.IsDelete){
+        for(ContentDocument con : Trigger.old){
+            System.debug(Trigger.old);
+            System.debug(con.Id);
+            contentDocId.add(con.Id);
+        }
+        for(ContentDocumentLink cdl : [SELECT ContentDocumentId, LinkedEntityId FROM ContentDocumentLink WHERE ContentDocumentId IN : contentDocId]){
+            contDocLinkedMap.put(cdl.ContentDocumentId, cdl.LinkedEntityId);
+            System.debug('map ' +contDocLinkedMap);
+            
+            
+        }
+        
+        for(ContentDocument cdoc : Trigger.Old){
+            //contDocLinkedMap.get(cdoc.Id) will give the LinkedEntityId
+            if(invKeyPrefix == String.valueOf(contDocLinkedMap.get(cdoc.Id)).left(3) &&
+               [select status__c from Inventory_Exception__c where id = :contDocLinkedMap.get(cdoc.Id)].status__c =='Final'){
+                   cdoc.adderror('This attachment could not be deleted because this exception record is marked as Final.');
+               }
+            
+        }
+        
+        
+        
+        
+    }
+
+
+}
