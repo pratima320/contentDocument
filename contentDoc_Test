@@ -1,0 +1,135 @@
+@isTest
+
+public class ContentDocLinkTrigger_Test {
+    
+    static testMethod void testInsertContentDoc(){
+        /* 
+         * insert inventory records to get linkedEntityId
+         */
+        Inventory_Exception__c inv = new Inventory_Exception__c(Status__c = 'Final');
+        insert inv;
+        
+        /*
+         * insert ContentVersion
+         */
+        ContentVersion content = new ContentVersion();
+            content.Title = 'header_picture';
+            content.PathOnClient = '/'+ content.Title + '.jpg';
+            Blob bodyBlob = Blob.valueOf('Unit test class for content Document Link');
+            content.VersionData = bodyBlob;
+        insert content;
+        
+        /*
+         * insert ContentDocumentLink
+         */
+        ContentDocumentLink contentlink=new ContentDocumentLink();
+            contentlink.LinkedEntityId = inv.id;
+            contentlink.contentdocumentid=[select contentdocumentid from contentversion where id =: content.id].contentdocumentid;
+            contentlink.ShareType = 'V';
+           
+        test.startTest();
+        try{
+        	insert contentLink;
+        }catch(Exception e){
+            System.Assert(e.getMessage().contains('This attachment could not be added because this exception record is marked as Final.'));
+        }
+        
+        test.stopTest();
+        
+        
+        
+    }
+    
+    static testMethod void testUpdateContentDoc(){
+        /* 
+         * insert inventory records to get linkedEntityId
+         */
+        Inventory_Exception__c inv = new Inventory_Exception__c(Status__c = 'In Process');
+        insert inv;
+        
+        /*
+         * insert ContentVersion
+         */
+        ContentVersion content = new ContentVersion();
+            content.Title = 'header_picture';
+            content.PathOnClient = '/'+ content.Title + '.jpg';
+            Blob bodyBlob = Blob.valueOf('Unit test class for content Document Link');
+            content.VersionData = bodyBlob;
+        insert content;
+        
+         /*
+         * insert ContentDocumentLink
+         */
+        ContentDocumentLink contentlink=new ContentDocumentLink();
+            contentlink.LinkedEntityId = inv.id;
+            contentlink.contentdocumentid=[select contentdocumentid from contentversion where id =: content.id].contentdocumentid;
+            contentlink.ShareType = 'V';
+        insert contentlink;
+        
+        inv.status__c = 'Final';
+        update inv;
+        
+        content.Title = 'header_picture1';
+        update content;
+        
+        contentLink.ShareType = 'C';
+        
+        test.startTest();
+        try{
+        	update contentlink;
+        }catch(Exception e){
+            System.Assert(e.getMessage().contains('This attachment could not be updated because this exception record is marked as Final.'));
+        }
+        
+        test.stopTest();
+        
+        
+    }
+    
+    static testMethod void testContentDelete(){
+        /* 
+         * insert inventory records to get linkedEntityId
+         */
+        Inventory_Exception__c inv = new Inventory_Exception__c(Status__c = 'In Process');
+        insert inv;
+        
+        /*
+         * insert ContentVersion
+         */
+        ContentVersion content = new ContentVersion();
+            content.Title = 'header_picture3';
+            content.PathOnClient = '/'+ content.Title + '.jpg';
+            Blob bodyBlob = Blob.valueOf('Unit test class for delete of ContentDocument');
+            content.VersionData = bodyBlob;
+        insert content;
+        
+        /*
+         * insert ContentDocumentLink
+         */
+        ContentDocumentLink contentlink=new ContentDocumentLink();
+            contentlink.LinkedEntityId = inv.id;
+            contentlink.contentdocumentid = [select contentdocumentid from contentversion where id =: content.id].contentdocumentid;
+            contentlink.ShareType = 'V';
+        insert contentlink;
+        
+        /*
+         * update inventory to final
+         */
+        inv.status__c = 'Final';
+        update inv;
+        
+        /*
+         * query contentDocument
+         */
+        List<ContentDocument> cDoc = [SELECT id FROM ContentDocument WHERE Id = :contentlink.contentdocumentid ];
+        
+        try{
+            delete cDoc;
+        }catch(Exception e){
+            System.Assert(e.getMessage().contains('This attachment could not be deleted because this exception record is marked as Final.'));
+        }
+        
+                                                  
+    }
+
+}
