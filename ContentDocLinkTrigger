@@ -1,0 +1,34 @@
+/***************************************************************************************
+Developer Name                   Modified Date                             Description
+***************************************************************************************
+Pratima Shrivastav              04/06/2018                        prevent insertion/update of  files once exception status is final
+---------------------------------------------------------------------------------------------------------------------------- */
+
+trigger ContentDocLinkTrigger on ContentDocumentLink (before insert, before update, before delete ) {
+    
+    Schema.DescribeSObjectResult inv = Inventory_Exception__c.sObjectType.getDescribe();
+    String invKeyPrefix = inv.getKeyPrefix();
+    
+    if(trigger.isInsert){
+        for(ContentDocumentLink a :trigger.new){
+            if(invKeyPrefix == String.valueOf(a.LinkedEntityId).left(3) &&
+               [select status__c from Inventory_Exception__c where id = :a.LinkedEntityId].status__c =='Final'){
+                   a.adderror('This attachment could not be added because this exception record is marked as Final.');
+               }
+        }
+    }
+    
+    
+    if(trigger.isUpdate){
+        for(ContentDocumentLink a :trigger.new){
+            if(invKeyPrefix == String.valueOf(a.LinkedEntityId).left(3) &&
+               [select status__c from Inventory_Exception__c where id = :a.LinkedEntityId].status__c =='Final'){
+                   a.adderror('This attachment could not be updated because this exception record is marked as Final.');
+               }
+        }
+    }
+    
+    
+
+
+}
